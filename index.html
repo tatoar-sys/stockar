@@ -308,7 +308,7 @@
     <script>
       const state = { token: localStorage.getItem('stockToken') || '', data: null, authMode: 'login', section: 'inventory' };
       const $ = id => document.getElementById(id);
-      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3sahmGnTLy6dejhFbxTuC3Jw4zSDQa6qeOahRPVUsKEeN_vdJp0FgPtJCjRW75ZLl/exec';
+      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6KGtPtK5m2HbQaMO1T8fGsfe2JlxW3GcZbIOlv-jCV_Jp3sKUv74885ELgNEcZBIjzA/exec';
       const today = () => {
         const now = new Date();
         return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
