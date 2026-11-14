@@ -310,7 +310,7 @@
     <script>
       const state = { token: localStorage.getItem('stockToken') || '', data: null, authMode: 'login', section: 'inventory' };
       const $ = id => document.getElementById(id);
-      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUpuWmcLwQdphg3F2FxjITiQOpI9neaNFMiPEBkWxeWbGwzfv8JIzIR_-cHk9769epbg/exec';
+      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQg7UawhjkmQJgYkPJtQp3nLxf-GdDJiRQ-zjc555mZakQOXLX_zd5357E5RFPNY_40g/exec';
       const bridge = { ready: false, origin: '', nextId: 0, pending: new Map(), resolveReady: null };
       const bridgeReady = new Promise(resolve => { bridge.resolveReady = resolve; });
       const bridgeFrame = $('appsScriptBridge');
