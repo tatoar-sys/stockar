@@ -1,18 +1,455 @@
 <!DOCTYPE html>
-<html lang="ar">
-<head>
+<html lang="es">
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17231d;
+        --muted: #78847c;
+        --line: #e7ece8;
+        --paper: #fff;
+        --canvas: #f5f7f4;
+        --green: #23734e;
+        --green-dark: #185b3d;
+        --green-soft: #e8f4ec;
+        --orange: #b66b22;
+        --orange-soft: #fff2df;
+        --red: #b94a48;
+        --red-soft: #ffeded;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; color: var(--ink); background: var(--canvas); }
+      button, input, select { font: inherit; }
+      button { cursor: pointer; }
+      .hidden { display: none !important; }
+      .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 15% 15%, #e5f1e7, transparent 34%), var(--canvas); }
+      .auth-card { width: min(100%, 420px); padding: 36px; border: 1px solid var(--line); border-radius: 22px; background: var(--paper); box-shadow: 0 18px 55px #1c382014; }
+      .brand-mark { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 15px; background: var(--green-soft); color: var(--green); font-size: 24px; }
+      .auth-card h1 { margin: 17px 0 5px; font-size: 25px; letter-spacing: -.5px; }
+      .auth-card > p { margin: 0 0 25px; color: var(--muted); font-size: 14px; }
+      .field { display: grid; gap: 7px; margin-bottom: 16px; }
+      .field label { color: #536158; font-size: 13px; font-weight: 650; }
+      .field input, .field select, .toolbar input, .toolbar select { width: 100%; padding: 11px 12px; border: 1px solid #dfe6e0; border-radius: 10px; outline: none; background: white; color: var(--ink); }
+      .field input:focus, .field select:focus, .toolbar input:focus, .toolbar select:focus { border-color: #7ab794; box-shadow: 0 0 0 3px #23734e16; }
+      .primary, .secondary, .quiet, .danger-button { min-height: 40px; padding: 9px 14px; border: 0; border-radius: 10px; font-weight: 680; }
+      .primary { color: white; background: var(--green); }
+      .primary:hover { background: var(--green-dark); }
+      .secondary { color: var(--green); background: var(--green-soft); }
+      .quiet { color: #58665c; background: #f1f4f1; }
+      .danger-button { color: var(--red); background: var(--red-soft); }
+      .full { width: 100%; }
+      .auth-switch { margin-top: 18px; text-align: center; color: var(--muted); font-size: 13px; }
+      .text-button { padding: 0; border: 0; background: transparent; color: var(--green); font-weight: 700; }
+      .auth-error { min-height: 20px; margin: 12px 0 0; color: var(--red); font-size: 13px; }
+      .app-shell { min-height: 100vh; display: grid; grid-template-columns: 238px minmax(0, 1fr); }
+      .sidebar { display: flex; flex-direction: column; padding: 22px 15px; border-right: 1px solid var(--line); background: white; }
+      .brand { display: flex; align-items: center; gap: 11px; padding: 1px 9px 28px; font-size: 15px; font-weight: 760; }
+      .brand .brand-mark { width: 39px; height: 39px; font-size: 20px; }
+      .nav-label { margin: 0 10px 9px; color: #98a19b; font-size: 10px; font-weight: 750; letter-spacing: 1.1px; text-transform: uppercase; }
+      .nav-button { display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 4px; padding: 11px 12px; border: 0; border-radius: 10px; background: transparent; color: #69756d; text-align: left; font-size: 13px; font-weight: 650; }
+      .nav-button.active { background: var(--green-soft); color: var(--green-dark); }
+      .nav-icon { width: 18px; text-align: center; font-size: 16px; }
+      .sidebar-spacer { flex: 1; }
+      .user-box { display: flex; align-items: center; gap: 10px; padding: 13px 7px 4px; border-top: 1px solid var(--line); }
+      .avatar { width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; background: #e9f1eb; color: var(--green-dark); font-size: 13px; font-weight: 750; }
+      .user-meta { min-width: 0; flex: 1; }
+      .user-meta strong, .user-meta small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .user-meta strong { font-size: 12px; }
+      .user-meta small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+      .logout { border: 0; background: transparent; color: var(--muted); font-size: 17px; }
+      .main { min-width: 0; padding: 30px clamp(18px, 4vw, 52px) 50px; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 28px; }
+      .heading h1 { margin: 0; font-size: clamp(22px, 2.4vw, 29px); letter-spacing: -.7px; }
+      .heading p { margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+      .top-actions { display: flex; gap: 9px; }
+      .top-actions .logout-mobile { display: none; }
+      .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; margin-bottom: 22px; }
+      .stat-card, .panel { border: 1px solid var(--line); border-radius: 15px; background: white; }
+      .stat-card { min-height: 112px; padding: 18px 20px; }
+      .stat-label { color: var(--muted); font-size: 12px; font-weight: 630; }
+      .stat-value { display: flex; align-items: center; gap: 9px; margin-top: 12px; font-size: 27px; font-weight: 760; letter-spacing: -.6px; }
+      .stat-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+      .stat-dot.orange { background: #e3a34f; }
+      .stat-dot.blue { background: #6790bf; }
+      .panel { margin-bottom: 19px; overflow: hidden; }
+      .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+      .panel-head h2 { margin: 0; font-size: 15px; }
+      .panel-head p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+      .toolbar { display: flex; gap: 9px; padding: 14px 20px; }
+      .toolbar input { max-width: 260px; }
+      .toolbar select { width: auto; min-width: 150px; }
+      .table-wrap { overflow-x: auto; }
+      table { width: 100%; border-collapse: collapse; text-align: left; }
+      th { padding: 11px 20px; color: #8a958d; background: #fbfcfb; font-size: 10px; font-weight: 720; letter-spacing: .65px; text-transform: uppercase; white-space: nowrap; }
+      td { padding: 13px 20px; border-top: 1px solid #eff2ef; font-size: 12px; white-space: nowrap; }
+      td:first-child { color: #303d34; font-size: 13px; font-weight: 680; }
+      .category-text { color: var(--muted); font-weight: 450; }
+      .badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 20px; font-size: 10px; font-weight: 720; }
+      .badge.good { background: var(--green-soft); color: var(--green-dark); }
+      .badge.low { background: var(--red-soft); color: var(--red); }
+      .badge.warn { background: var(--orange-soft); color: var(--orange); }
+      .row-actions { display: flex; gap: 6px; }
+      .small-action { padding: 6px 9px; border: 0; border-radius: 8px; background: #eff5f0; color: var(--green-dark); font-size: 10px; font-weight: 720; }
+      .small-action.out { background: #fff2eb; color: #a45b36; }
+      .empty { padding: 32px 18px; color: var(--muted); text-align: center; font-size: 13px; }
+      .mobile-nav { display: none; }
+      .toast { position: fixed; right: 22px; bottom: 22px; z-index: 20; max-width: min(380px, calc(100vw - 32px)); padding: 13px 17px; border-radius: 11px; background: #193c2a; color: white; box-shadow: 0 8px 26px #152b1d30; font-size: 13px; }
+      .modal-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; background: #15241b66; }
+      .modal { width: min(100%, 480px); max-height: calc(100vh - 32px); overflow: auto; padding: 23px; border-radius: 16px; background: white; box-shadow: 0 20px 70px #11251940; }
+      .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+      .modal-head h2 { margin: 0; font-size: 18px; }
+      .close { border: 0; background: transparent; color: var(--muted); font-size: 22px; }
+      .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+      .section-hidden { display: none; }
+      @media (max-width: 820px) {
+        .app-shell { display: block; padding-bottom: 67px; }
+        .sidebar { display: none; }
+        .main { padding: 22px 16px 30px; }
+        .mobile-nav { position: fixed; right: 0; bottom: 0; left: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); padding: 7px 8px calc(7px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #ffffffed; backdrop-filter: blur(12px); }
+        .mobile-nav .nav-button { flex-direction: column; justify-content: center; gap: 3px; margin: 0; padding: 7px 3px; text-align: center; font-size: 9px; }
+        .mobile-nav .nav-icon { font-size: 17px; }
+        .mobile-nav .nav-button.active { background: transparent; color: var(--green); }
+        .topbar { align-items: flex-start; margin-bottom: 20px; }
+        .top-actions .quiet { display: none; }
+        .top-actions .logout-mobile { display: inline-flex; }
+        .cards { gap: 9px; }
+        .stat-card { min-height: 96px; padding: 14px 12px; }
+        .stat-label { font-size: 10px; }
+        .stat-value { margin-top: 10px; font-size: 23px; }
+        .panel-head { padding: 15px; }
+        .toolbar { flex-wrap: wrap; padding: 12px 15px; }
+        .toolbar input { max-width: unset; flex: 1 1 100%; }
+        .toolbar select { min-width: 0; flex: 1; }
+        th, td { padding-right: 13px; padding-left: 13px; }
+      }
+      @media (max-width: 430px) {
+        .topbar { gap: 8px; }
+        .heading p { max-width: 230px; line-height: 1.4; }
+        .top-actions .primary { padding: 9px 11px; font-size: 11px; }
+        .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .stat-card { padding: 12px 9px; }
+        .stat-value { gap: 6px; font-size: 21px; }
+        .stat-dot { width: 7px; height: 7px; }
+      }
+    </style>
+  </head>
+  <body>
+    <section id="authView" class="auth-wrap">
+      <div class="auth-card">
+        <div class="brand-mark">▦</div>
+        <h1 id="authTitle">Stock Quillinzo</h1>
+        <p id="authSubtitle">Ingresá para administrar el inventario.</p>
+        <form id="authForm">
+          <div class="field hidden" id="nameField">
+            <label for="authName">Nombre</label>
+            <input id="authName" autocomplete="name" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="authEmail">Correo electrónico</label>
+            <input id="authEmail" type="email" autocomplete="email" required>
+          </div>
+          <div class="field">
+            <label for="authPassword">Contraseña</label>
+            <input id="authPassword" type="password" autocomplete="current-password" minlength="8" required>
+          </div>
+          <button id="authSubmit" class="primary full" type="submit">Ingresar</button>
+          <div id="authError" class="auth-error" role="alert"></div>
+        </form>
+        <div class="auth-switch"><span id="authSwitchText">¿No tenés cuenta?</span> <button id="authSwitch" class="text-button" type="button">Registrate</button></div>
+      </div>
+    </section>
 
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	
-	<title></title>
-	
-	<link rel="stylesheet" href="assets/styles/main.css">
-	
-</head>
-<body>
+    <div id="appView" class="app-shell hidden">
+      <aside class="sidebar">
+        <div class="brand"><div class="brand-mark">▦</div><span>Stock Quillinzo</span></div>
+        <div class="nav-label">Menú</div>
+        <button class="nav-button active" data-section="inventory"><span class="nav-icon">▤</span>Inventario</button>
+        <button class="nav-button" data-section="movements"><span class="nav-icon">↔</span>Movimientos</button>
+        <button class="nav-button" data-section="purchases"><span class="nav-icon">☷</span>Lista de compras</button>
+        <div class="sidebar-spacer"></div>
+        <div class="user-box">
+          <div id="avatar" class="avatar">U</div>
+          <div class="user-meta"><strong id="userName">Usuario</strong><small id="userEmail"></small></div>
+          <button class="logout" data-logout title="Cerrar sesión" aria-label="Cerrar sesión">↪</button>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="topbar">
+          <div class="heading"><h1 id="pageTitle">Inventario</h1><p id="pageSubtitle">Controlá tus productos y niveles de stock.</p></div>
+          <div class="top-actions">
+            <button class="quiet logout-mobile" data-logout type="button">Salir</button>
+            <button class="quiet" id="refreshButton">↻ Actualizar</button>
+            <button class="primary" id="newProductButton">＋ Nuevo producto</button>
+          </div>
+        </header>
+        <section id="inventorySection">
+          <div class="cards">
+            <article class="stat-card"><div class="stat-label">Productos</div><div class="stat-value"><span class="stat-dot"></span><span id="productCount">0</span></div></article>
+            <article class="stat-card"><div class="stat-label">Faltantes / compras</div><div class="stat-value"><span class="stat-dot orange"></span><span id="missingCount">0</span></div></article>
+            <article class="stat-card"><div class="stat-label">Por vencer (30 días)</div><div class="stat-value"><span class="stat-dot blue"></span><span id="expiringCount">0</span></div></article>
+          </div>
+          <section class="panel">
+            <div class="panel-head"><div><h2>Productos</h2><p>Existencias actuales por producto y categoría.</p></div></div>
+            <div class="toolbar">
+              <input id="searchInput" type="search" placeholder="Buscar producto..." aria-label="Buscar producto">
+              <select id="categoryFilter" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
+              <select id="stockFilter" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="missing">Solo faltantes</option><option value="expiring">Por vencer</option></select>
+            </div>
+            <div class="table-wrap"><table><thead><tr><th>Producto</th><th>Categoría</th><th>Cantidad</th><th>Vencimiento próximo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="inventoryBody"></tbody></table><div id="inventoryEmpty" class="empty hidden">No se encontraron productos con esos filtros.</div></div>
+          </section>
+        </section>
+        <section id="purchasesSection" class="section-hidden">
+          <section class="panel">
+            <div class="panel-head"><div><h2>Lista de compras y reabastecimiento</h2><p>Productos sin existencias para reponer.</p></div><button id="copyPurchases" class="secondary">Copiar para WhatsApp</button></div>
+            <div class="table-wrap"><table><thead><tr><th>Producto</th><th>Categoría</th><th>Estado</th></tr></thead><tbody id="purchasesBody"></tbody></table><div id="purchasesEmpty" class="empty hidden">¡Todo al día! No tenés productos pendientes de compra.</div></div>
+          </section>
+        </section>
+        <section id="movementsSection" class="section-hidden">
+          <section class="panel">
+            <div class="panel-head"><div><h2>Registro de entradas y salidas</h2><p>Últimos movimientos, fechas, lotes y usuarios.</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Fecha y hora</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Vencimiento</th><th>Usuario</th></tr></thead><tbody id="movementsBody"></tbody></table><div id="movementsEmpty" class="empty hidden">Aún no hay movimientos registrados.</div></div>
+          </section>
+        </section>
+      </main>
+      <nav class="mobile-nav">
+        <button class="nav-button active" data-section="inventory"><span class="nav-icon">▤</span>Inventario</button>
+        <button class="nav-button" data-section="movements"><span class="nav-icon">↔</span>Movimientos</button>
+        <button class="nav-button" data-section="purchases"><span class="nav-icon">☷</span>Compras</button>
+      </nav>
+    </div>
 
-	<script src="assets/scripts/main.js"></script>
+    <div id="modalBackdrop" class="modal-backdrop hidden">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head"><h2 id="modalTitle"></h2><button id="modalClose" class="close" type="button" aria-label="Cerrar">×</button></div>
+        <form id="modalForm"></form>
+      </div>
+    </div>
+    <div id="toast" class="toast hidden" role="status"></div>
 
-</body>
+    <script>
+      const state = { token: localStorage.getItem('stockToken') || '', data: null, authMode: 'login', section: 'inventory' };
+      const $ = id => document.getElementById(id);
+      const today = () => {
+        const now = new Date();
+        return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      };
+      function server(method, payload) {
+        return new Promise((resolve, reject) => {
+          google.script.run.withSuccessHandler(resolve).withFailureHandler(error => reject(new Error(error.message || 'Ocurrió un error inesperado.')))[method](payload);
+        });
+      }
+      function escapeHtml(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+      }
+      function showToast(message) {
+        $('toast').textContent = message;
+        $('toast').classList.remove('hidden');
+        clearTimeout(showToast.timeout);
+        showToast.timeout = setTimeout(() => $('toast').classList.add('hidden'), 3200);
+      }
+      function authPayload(extra) { return Object.assign({ token: state.token }, extra || {}); }
+      function showAuth() {
+        $('authView').classList.remove('hidden');
+        $('appView').classList.add('hidden');
+      }
+      async function showApp() {
+        $('authView').classList.add('hidden');
+        $('appView').classList.remove('hidden');
+        await refreshData();
+      }
+      async function refreshData() {
+        try {
+          state.data = await server('apiGetData', authPayload());
+          $('userName').textContent = state.data.user.name;
+          $('userEmail').textContent = state.data.user.email;
+          $('avatar').textContent = state.data.user.name.slice(0, 1).toUpperCase();
+          render();
+        } catch (error) {
+          if (/sesión venció/i.test(error.message)) {
+            localStorage.removeItem('stockToken');
+            state.token = '';
+            showAuth();
+          } else showToast(error.message);
+        }
+      }
+      function daysUntil(date) {
+        if (!date) return null;
+        const todayDate = new Date(); todayDate.setHours(0, 0, 0, 0);
+        const expiry = new Date(date + 'T00:00:00'); expiry.setHours(0, 0, 0, 0);
+        return Math.ceil((expiry - todayDate) / 86400000);
+      }
+      function formatDate(date, withTime) {
+        if (!date) return '—';
+        const value = new Date(date);
+        if (isNaN(value.getTime())) return date;
+        return new Intl.DateTimeFormat('es-AR', withTime ? { dateStyle: 'short', timeStyle: 'short' } : { dateStyle: 'short', timeZone: 'UTC' }).format(value);
+      }
+      function render() {
+        const { inventory, movements, categories } = state.data;
+        $('productCount').textContent = inventory.length;
+        $('missingCount').textContent = inventory.filter(item => item.quantity === 0).length;
+        $('expiringCount').textContent = inventory.filter(item => {
+          const days = daysUntil(item.expiryDate);
+          return item.quantity > 0 && days !== null && days >= 0 && days <= 30;
+        }).length;
+        const categoryFilter = $('categoryFilter');
+        const currentCategory = categoryFilter.value;
+        categoryFilter.innerHTML = '<option value="">Todas las categorías</option>' + categories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join('');
+        categoryFilter.value = currentCategory;
+
+        const query = $('searchInput').value.trim().toLocaleLowerCase('es');
+        const category = categoryFilter.value;
+        const stockFilter = $('stockFilter').value;
+        const filtered = inventory.filter(item => {
+          const days = daysUntil(item.expiryDate);
+          const matchesQuery = item.name.toLocaleLowerCase('es').includes(query);
+          const matchesCategory = !category || item.category === category;
+          const matchesStock = stockFilter === 'missing' ? item.quantity === 0 :
+            stockFilter === 'expiring' ? item.quantity > 0 && days !== null && days >= 0 && days <= 30 : true;
+          return matchesQuery && matchesCategory && matchesStock;
+        });
+        $('inventoryBody').innerHTML = filtered.map(item => {
+          const days = daysUntil(item.expiryDate);
+          const expiryClass = days !== null && days < 0 ? 'low' : days !== null && days <= 30 ? 'warn' : '';
+          const expiryText = !item.expiryDate ? '—' : `${formatDate(item.expiryDate, false)}${days !== null && days < 0 ? ' · vencido' : ''}`;
+          return `<tr>
+            <td>${escapeHtml(item.name)}</td><td class="category-text">${escapeHtml(item.category)}</td>
+            <td>${item.quantity}</td><td>${expiryClass ? `<span class="badge ${expiryClass}">${escapeHtml(expiryText)}</span>` : escapeHtml(expiryText)}</td>
+            <td><span class="badge ${item.quantity > 0 ? 'good' : 'low'}">${item.quantity > 0 ? 'En stock' : 'Falta'}</span></td>
+            <td><div class="row-actions"><button class="small-action" data-move="Entrada" data-id="${escapeHtml(item.id)}">＋ Entrada</button>${item.quantity > 0 ? `<button class="small-action out" data-move="Salida" data-id="${escapeHtml(item.id)}">− Salida</button>` : ''}</div></td>
+          </tr>`;
+        }).join('');
+        $('inventoryEmpty').classList.toggle('hidden', filtered.length > 0);
+
+        const missing = inventory.filter(item => item.quantity === 0);
+        $('purchasesBody').innerHTML = missing.map(item => `<tr><td>${escapeHtml(item.name)}</td><td class="category-text">${escapeHtml(item.category)}</td><td><span class="badge low">Falta / comprar</span></td></tr>`).join('');
+        $('purchasesEmpty').classList.toggle('hidden', missing.length > 0);
+
+        $('movementsBody').innerHTML = movements.map(item => `<tr>
+          <td>${escapeHtml(formatDate(item.date, true))}</td><td>${escapeHtml(item.product)}</td>
+          <td><span class="badge ${item.type === 'Entrada' ? 'good' : 'warn'}">${escapeHtml(item.type)}</span></td>
+          <td>${item.quantity}</td><td>${escapeHtml(formatDate(item.expiryDate, false))}</td><td>${escapeHtml(item.user)}</td>
+        </tr>`).join('');
+        $('movementsEmpty').classList.toggle('hidden', movements.length > 0);
+      }
+      function setSection(section) {
+        state.section = section;
+        ['inventory', 'movements', 'purchases'].forEach(name => $(name + 'Section').classList.toggle('section-hidden', name !== section));
+        document.querySelectorAll('[data-section]').forEach(button => button.classList.toggle('active', button.dataset.section === section));
+        $('pageTitle').textContent = section === 'inventory' ? 'Inventario' : section === 'movements' ? 'Movimientos' : 'Lista de compras';
+        $('pageSubtitle').textContent = section === 'inventory' ? 'Controlá tus productos y niveles de stock.' : section === 'movements' ? 'Historial de entradas, salidas y vencimientos.' : 'Productos que necesitan reabastecimiento.';
+        $('newProductButton').classList.toggle('hidden', section !== 'inventory');
+      }
+      function openModal(title, html, onSubmit) {
+        $('modalTitle').textContent = title;
+        $('modalForm').innerHTML = html;
+        $('modalBackdrop').classList.remove('hidden');
+        $('modalForm').onsubmit = onSubmit;
+        $('modalForm').querySelector('input, select')?.focus();
+      }
+      function closeModal() { $('modalBackdrop').classList.add('hidden'); }
+      function productForm() {
+        const categories = state.data.categories.map(category => `<option>${escapeHtml(category)}</option>`).join('');
+        openModal('Agregar producto', `
+          <div class="field"><label for="productName">Nombre del producto *</label><input id="productName" maxlength="120" required></div>
+          <div class="field"><label for="productCategory">Categoría *</label><select id="productCategory" required>${categories}</select></div>
+          <div class="field"><label for="initialQuantity">Cantidad inicial</label><input id="initialQuantity" type="number" min="0" step="1" value="0" required></div>
+          <div class="field"><label for="productExpiry">Vencimiento (opcional)</label><input id="productExpiry" type="date"></div>
+          <div class="field"><label for="productEntryDate">Fecha y hora de entrada</label><input id="productEntryDate" type="datetime-local" value="${today()}" required></div>
+          <div class="modal-actions"><button class="quiet" type="button" data-cancel>Cancelar</button><button class="primary" type="submit">Guardar producto</button></div>
+        `, async event => {
+          event.preventDefault();
+          const button = $('modalForm').querySelector('[type=submit]');
+          button.disabled = true;
+          try {
+            await server('apiAddProduct', authPayload({
+              name: $('productName').value, category: $('productCategory').value,
+              quantity: Number($('initialQuantity').value), expiryDate: $('productExpiry').value,
+              movementDate: $('productEntryDate').value
+            }));
+            closeModal(); await refreshData(); showToast('Producto agregado.');
+          } catch (error) { showToast(error.message); button.disabled = false; }
+        });
+      }
+      function movementForm(productId, type) {
+        const product = state.data.inventory.find(item => item.id === productId);
+        const isEntry = type === 'Entrada';
+        openModal(isEntry ? 'Registrar entrada' : 'Registrar salida', `
+          <div class="field"><label>Producto</label><input value="${escapeHtml(product.name)}" disabled></div>
+          <div class="field"><label for="moveQuantity">Cantidad *</label><input id="moveQuantity" type="number" min="1" max="${isEntry ? '' : product.quantity}" step="1" required></div>
+          <div class="field"><label for="moveDate">Fecha y hora *</label><input id="moveDate" type="datetime-local" value="${today()}" required></div>
+          ${isEntry ? '<div class="field"><label for="moveExpiry">Vencimiento del lote (opcional)</label><input id="moveExpiry" type="date"></div>' : ''}
+          <div class="field"><label for="moveNote">Nota (opcional)</label><input id="moveNote" maxlength="250" placeholder="Observaciones"></div>
+          <div class="modal-actions"><button class="quiet" type="button" data-cancel>Cancelar</button><button class="primary" type="submit">Guardar ${isEntry ? 'entrada' : 'salida'}</button></div>
+        `, async event => {
+          event.preventDefault();
+          const button = $('modalForm').querySelector('[type=submit]');
+          button.disabled = true;
+          try {
+            await server('apiMoveStock', authPayload({
+              productId, type, quantity: Number($('moveQuantity').value),
+              movementDate: $('moveDate').value, expiryDate: isEntry ? $('moveExpiry').value : '',
+              note: $('moveNote').value
+            }));
+            closeModal(); await refreshData(); showToast(type + ' registrada.');
+          } catch (error) { showToast(error.message); button.disabled = false; }
+        });
+      }
+
+      $('authSwitch').addEventListener('click', () => {
+        state.authMode = state.authMode === 'login' ? 'register' : 'login';
+        const registering = state.authMode === 'register';
+        $('authTitle').textContent = registering ? 'Crear cuenta' : 'Stock Quillinzo';
+        $('authSubtitle').textContent = registering ? 'Registrate para comenzar a controlar el stock.' : 'Ingresá para administrar el inventario.';
+        $('nameField').classList.toggle('hidden', !registering);
+        $('authPassword').autocomplete = registering ? 'new-password' : 'current-password';
+        $('authSubmit').textContent = registering ? 'Registrarme' : 'Ingresar';
+        $('authSwitchText').textContent = registering ? '¿Ya tenés cuenta?' : '¿No tenés cuenta?';
+        $('authSwitch').textContent = registering ? 'Iniciá sesión' : 'Registrate';
+        $('authError').textContent = '';
+      });
+      $('authForm').addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = $('authSubmit');
+        button.disabled = true;
+        $('authError').textContent = '';
+        try {
+          const method = state.authMode === 'register' ? 'apiRegister' : 'apiLogin';
+          const result = await server(method, { email: $('authEmail').value, password: $('authPassword').value, name: $('authName').value });
+          state.token = result.token;
+          localStorage.setItem('stockToken', result.token);
+          $('authPassword').value = '';
+          await showApp();
+        } catch (error) { $('authError').textContent = error.message; }
+        finally { button.disabled = false; }
+      });
+      document.querySelectorAll('[data-section]').forEach(button => button.addEventListener('click', () => setSection(button.dataset.section)));
+      document.querySelectorAll('[data-logout]').forEach(button => button.addEventListener('click', logout));
+      async function logout() {
+        try { await server('apiLogout', { token: state.token }); } catch (error) { showToast(error.message); }
+        localStorage.removeItem('stockToken'); state.token = ''; showAuth();
+      }
+      $('newProductButton').addEventListener('click', productForm);
+      $('refreshButton').addEventListener('click', refreshData);
+      ['searchInput', 'categoryFilter', 'stockFilter'].forEach(id => $(id).addEventListener(id === 'searchInput' ? 'input' : 'change', render));
+      $('inventoryBody').addEventListener('click', event => {
+        const button = event.target.closest('[data-move]');
+        if (button) movementForm(button.dataset.id, button.dataset.move);
+      });
+      $('modalClose').addEventListener('click', closeModal);
+      $('modalBackdrop').addEventListener('click', event => { if (event.target === $('modalBackdrop')) closeModal(); });
+      $('modalForm').addEventListener('click', event => { if (event.target.closest('[data-cancel]')) closeModal(); });
+      $('copyPurchases').addEventListener('click', async () => {
+        const missing = state.data.inventory.filter(item => item.quantity === 0);
+        const text = missing.length ? 'Lista de compras - Stock Quillinzo\n' + missing.map(item => `• ${item.name} (${item.category})`).join('\n') : '¡Todo al día! No hay productos pendientes de compra.';
+        try { await navigator.clipboard.writeText(text); showToast('Lista copiada para compartir.'); }
+        catch (error) { showToast('No se pudo copiar. Revisá los permisos del navegador.'); }
+      });
+      if (state.token) showApp(); else showAuth();
+    </script>
+  </body>
 </html>
