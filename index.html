@@ -239,6 +239,10 @@
       };
       function server(method, payload) {
         return new Promise((resolve, reject) => {
+          if (typeof google === 'undefined' || !google.script || !google.script.run) {
+            reject(new Error('La app no se abrió desde Apps Script. Abrí la URL de la aplicación web implementada (termina en /exec), no la vista previa del editor.'));
+            return;
+          }
           google.script.run.withSuccessHandler(resolve).withFailureHandler(error => reject(new Error(error.message || 'Ocurrió un error inesperado.')))[method](payload);
         });
       }
@@ -449,7 +453,3 @@
         try { await navigator.clipboard.writeText(text); showToast('Lista copiada para compartir.'); }
         catch (error) { showToast('No se pudo copiar. Revisá los permisos del navegador.'); }
       });
-      if (state.token) showApp(); else showAuth();
-    </script>
-  </body>
-</html>
