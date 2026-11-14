@@ -305,75 +305,40 @@
       </div>
     </div>
     <div id="toast" class="toast hidden" role="status"></div>
-    <iframe id="appsScriptBridge" title="Conexión segura con Google Sheets" aria-hidden="true" style="position:fixed;width:1px;height:1px;left:-10px;bottom:0;border:0;opacity:0"></iframe>
     <script>
       const state = { token: localStorage.getItem('stockToken') || '', data: null, authMode: 'login', section: 'inventory' };
       const $ = id => document.getElementById(id);
-      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwJzX5yAlEEj8Xl7Wn3xcGIveo475-wRL3DT45TFRVhsIax_eFwyRSpEbxG3lXjAXO-0Q/exec';
-      const bridge = { ready: false, origin: '', nextId: 0, pending: new Map(), resolveReady: null };
-      const bridgeReady = new Promise(resolve => { bridge.resolveReady = resolve; });
-      const bridgeFrame = $('appsScriptBridge');
-      bridgeFrame.src = APP_SCRIPT_URL + '?bridge=1';
+      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2SjtAReR8y9x4sdmjgp1ZfUCBwnV3f8qouAEWCDTjuynmsKawWyyDZ1MJozrNNL2Skg/exec';
       const today = () => {
         const now = new Date();
         return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
       };
-      window.addEventListener('message', event => {
-        let host;
-        try { host = new URL(event.origin).hostname; } catch (error) { return; }
-        if (event.source !== bridgeFrame.contentWindow ||
-            !(host === 'script.googleusercontent.com' || host.endsWith('.script.googleusercontent.com'))) return;
-        const message = event.data;
-        if (!message || message.app !== 'stock-quillinzo') return;
-        if (message.ready) {
-          bridge.origin = event.origin;
-          bridge.ready = true;
-          bridge.resolveReady();
-          return;
+      async function server(method, payload) {
+        if (window.location.protocol === 'file:') {
+          throw new Error('Abriste la aplicación como archivo local. Ingresá desde https://tatoar-sys.github.io/stockar/ para conectarte con Google Sheets.');
         }
-        const pending = bridge.pending.get(message.id);
-        if (!pending) return;
-        clearTimeout(pending.timeout);
-        bridge.pending.delete(message.id);
-        if (message.error) pending.reject(new Error(message.error));
-        else pending.resolve(message.result);
-      });
-      function server(method, payload) {
-        return new Promise((resolve, reject) => {
-          if (window.location.protocol === 'file:') {
-            reject(new Error('Abriste la aplicación como archivo local. Ingresá desde https://tatoar-sys.github.io/stockar/ para conectarte con Google Sheets.'));
-            return;
-          }
-          const sendRequest = () => {
-            if (!bridge.ready) {
-              reject(new Error('No se pudo iniciar el puente de Google Sheets. Verificá que el archivo Bridge esté creado en Apps Script y que la implementación permita acceso para cualquier persona.'));
-              return;
-            }
-            const id = String(++bridge.nextId);
-            const timeout = setTimeout(() => {
-              bridge.pending.delete(id);
-              reject(new Error('Google Sheets tardó demasiado en responder. Intentá nuevamente.'));
-            }, 30000);
-            bridge.pending.set(id, { resolve, reject, timeout });
-            bridgeFrame.contentWindow.postMessage({
-              app: 'stock-quillinzo', id: id, method: method, payload: payload
-            }, bridge.origin);
-          };
-          if (bridge.ready) {
-            sendRequest();
-            return;
-          }
-          let expired = false;
-          const timeout = setTimeout(() => {
-            expired = true;
-            reject(new Error('No se pudo conectar con Google Sheets. Verificá que el archivo Bridge esté creado en Apps Script y que la implementación permita acceso para cualquier persona.'));
-          }, 15000);
-          bridgeReady.then(() => {
-            if (expired) return;
-            clearTimeout(timeout);
-            sendRequest();
+        let response;
+        try {
+          response = await fetch(APP_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(Object.assign({ action: method }, payload || {}))
           });
-        });
+        } catch (error) {
+          throw new Error('No se pudo conectar con Apps Script. Verificá que la implementación actualizada sea pública y que su URL /exec esté configurada en la aplicación.');
+        }
+        let result;
+        try {
+          result = await response.json();
+        } catch (error) {
+          throw new Error('Apps Script no devolvió JSON. Verificá la URL /exec, los permisos de acceso y que hayas publicado la última versión de Code.gs.');
+        }
+        if (!response.ok) throw new Error('Apps Script respondió con el estado ' + response.status + '.');
+        if (!result || result.success !== true) {
+          throw new Error(result && result.message ? result.message : 'Apps Script no pudo completar la operación.');
+        }
+        const { success, ...data } = result;
+        return data;
       }
       function escapeHtml(value) {
         return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
